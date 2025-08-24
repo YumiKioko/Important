@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SearchSploit Complete Walkthrough</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary-bg: #0a0a0a;
+            --secondary-bg: #1a1a1a;
+            --tertiary-bg: #2a2a2a;
+            --accent-color: #ffffff;
+            --text-primary: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --text-muted: #808080;
+            --border-color: #3a3a3a;
+            --highlight: #ffffff;
+            --code-bg: #151515;
+            --shadow: rgba(255, 255, 255, 0.1);
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--primary-bg) 0%, var(--secondary-bg) 100%);
+            color: var(--text-primary);
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: -1;
+            animation: pulse 4s ease-in-out infinite;
+        }
+        
+        .title {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            background: linear-gradient(45deg, var(--accent-color), var(--text-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+        
+        .section {
+            background: rgba(26, 26, 26, 0.8);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
+            opacity: 0.5;
+        }
+        
+        .section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(255, 255, 255, 0.1);
+            border-color: var(--accent-color);
+        }
+        
+        .section-title {
+            font-size: 1.8rem;
+            color: var(--accent-color);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .section-title::before {
+            content: '▶';
+            font-size: 1.2rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .section:hover .section-title::before {
+            transform: translateX(5px);
+        }
+        
+        .code-block {
+            background: var(--code-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+            position: relative;
+            font-family: 'Consolas', monospace;
+        }
+        
+        .code-block::before {
+            content: '$ ';
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+        
+        .code-block code {
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+        
+        .command-output {
+            background: var(--tertiary-bg);
+            border-left: 4px solid var(--accent-color);
+            padding: 1rem 1.5rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        
+        .tip {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            margin: 1rem 0;
+            position: relative;
+        }
+        
+        .tip::before {
+            content: '💡';
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            font-size: 1.2rem;
+        }
+        
+        .tip-content {
+            margin-left: 2rem;
+        }
+        
+        .warning {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--accent-color);
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            margin: 1rem 0;
+            position: relative;
+        }
+        
+        .warning::before {
+            content: '⚠️';
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            font-size: 1.2rem;
+        }
+        
+        .warning-content {
+            margin-left: 2rem;
+        }
+        
+        .step {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .step-number {
+            background: var(--accent-color);
+            color: var(--primary-bg);
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        
+        .step-content {
+            flex: 1;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--code-bg);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        th {
+            background: var(--tertiary-bg);
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+        
+        tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .navigation {
+            position: sticky;
+            top: 2rem;
+            background: rgba(26, 26, 26, 0.95);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .nav-title {
+            font-size: 1.2rem;
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        .nav-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+        
+        .nav-link {
+            background: var(--tertiary-bg);
+            color: var(--text-primary);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+        
+        .nav-link:hover {
+            background: var(--accent-color);
+            color: var(--primary-bg);
+            transform: translateY(-2px);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.1); }
+        }
+        
+        @keyframes glow {
+            from { text-shadow: 0 0 10px rgba(255,255,255,0.3); }
+            to { text-shadow: 0 0 20px rgba(255,255,255,0.6); }
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            .title { font-size: 2rem; }
+            .nav-links { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">SearchSploit</h1>
+            <p class="subtitle">Complete Walkthrough & Reference Guide</p>
+        </div>
+        
+        <div class="navigation">
+            <div class="nav-title">Quick Navigation</div>
+            <div class="nav-links">
+                <a href="#overview" class="nav-link">Overview</a>
+                <a href="#installation" class="nav-link">Installation</a>
+                <a href="#basic-usage" class="nav-link">Basic Usage</a>
+                <a href="#advanced" class="nav-link">Advanced</a>
+                <a href="#examples" class="nav-link">Examples</a>
+                <a href="#tips" class="nav-link">Tips & Tricks</a>
+            </div>
+        </div>
+
+        <div class="section" id="overview">
+            <h2 class="section-title">What is SearchSploit?</h2>
+            <p>SearchSploit is a command-line search tool for Exploit Database that allows you to take a copy of the Exploit Database with you wherever you go. It's an essential tool for penetration testers and security researchers.</p>
+            
+            <div class="tip">
+                <div class="tip-content">
+                    <strong>Key Features:</strong>
+                    <br>• Offline searching of exploit database
+                    <br>• Integration with Metasploit
+                    <br>• Multiple search options and filters
+                    <br>• Regular updates from Exploit-DB
+                </div>
+            </div>
+        </div>
+
+        <div class="section" id="installation">
+            <h2 class="section-title">Installation</h2>
+            
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3>Update System</h3>
+                    <div class="code-block">
+                        <code>sudo apt update && sudo apt upgrade -y</code>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3>Install SearchSploit</h3>
+                    <div class="code-block">
+                        <code>sudo apt install exploitdb -y</code>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h3>Alternative Installation (Git)</h3>
+                    <div class="code-block">
+                        <code>git clone https://github.com/offensive-security/exploitdb.git /opt/exploitdb</code>
+                    </div>
+                    <div class="code-block">
+                        <code>ln -sf /opt/exploitdb/searchsploit /usr/local/bin/searchsploit</code>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <h3>Verify Installation</h3>
+                    <div class="code-block">
+                        <code>searchsploit -h</code>
+                    </div>
+                    <div class="command-output">Usage: searchsploit [options] term1 [term2] ... [termN]
+
+==========
+ Examples 
+==========
+  searchsploit afd windows local
+  searchsploit -t oracle windows
+  searchsploit -p 39446
+  searchsploit linux kernel 3.2 --exclude="(PoC)|/dos/"</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section" id="basic-usage">
+            <h2 class="section-title">Basic Usage</h2>
+            
+            <h3>Command Structure</h3>
+            <div class="code-block">
+                <code>searchsploit [options] search_terms</code>
+            </div>
+            
+            <h3>Essential Commands</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Command</th>
+                            <th>Description</th>
+                            <th>Example</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>searchsploit apache</code></td>
+                            <td>Basic search for Apache exploits</td>
+                            <td>Returns all Apache-related exploits</td>
+                        </tr>
+                        <tr>
+                            <td><code>searchsploit -t apache</code></td>
+                            <td>Search in title only</td>
+                            <td>More precise results</td>
+                        </tr>
+                        <tr>
+                            <td><code>searchsploit -e apache</code></td>
+                            <td>Exact match search</td>
+                            <td>Exact "apache" matches only</td>
+                        </tr>
+                        <tr>
+                            <td><code>searchsploit -s apache</code></td>
+                            <td>Strict search</td>
+                            <td>Case-sensitive search</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="section" id="advanced">
+            <h2 class="section-title">Advanced Features</h2>
+            
+            <h3>Filtering Options</h3>
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h4>Exclude Terms</h4>
+                    <div class="code-block">
+                        <code>searchsploit linux kernel --exclude="dos"</code>
+                    </div>
+                    <p>Excludes results containing "dos"</p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h4>Platform Specific</h4>
+                    <div class="code-block">
+                        <code>searchsploit windows local privilege</code>
+                    </div>
+                    <p>Search for Windows local privilege escalation</p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h4>JSON Output</h4>
+                    <div class="code-block">
+                        <code>searchsploit apache --json</code>
+                    </div>
+                    <p>Output results in JSON format</p>
+                </div>
+            </div>
+            
+            <h3>Working with Exploits</h3>
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h4>View Exploit Path</h4>
+                    <div class="code-block">
+                        <code>searchsploit -p 39446</code>
+                    </div>
+                    <div class="command-output">  Exploit: Linux Kernel 4.4.0 (Ubuntu 14.04/16.04 x86-64) - 'AF_PACKET' Race Condition Privilege Escalation
+      URL: https://www.exploit-db.com/exploits/39446
+     Path: /usr/share/exploitdb/exploits/linux/local/39446.c
+File Type: C source, ASCII text</div>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h4>Mirror/Copy Exploit</h4>
+                    <div class="code-block">
+                        <code>searchsploit -m 39446</code>
+                    </div>
+                    <p>Copies the exploit to current directory</p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h4>Examine Exploit</h4>
+                    <div class="code-block">
+                        <code>searchsploit -x 39446</code>
+                    </div>
+                    <p>Opens exploit in terminal viewer</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section" id="examples">
+            <h2 class="section-title">Practical Examples</h2>
+            
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h4>Search for SMB Exploits</h4>
+                    <div class="code-block">
+                        <code>searchsploit smb windows remote</code>
+                    </div>
+                    <div class="command-output">------------------------------------------------- ---------------------------------
+ Exploit Title                                   |  Path
+------------------------------------------------- ---------------------------------
+Microsoft Windows - 'EternalBlue' SMB Remote... | windows/remote/42315.py
+Microsoft Windows 7/8.1/2008 R2/2012 R2/2016... | windows/remote/42030.py
+Microsoft Windows SMB Server - 'EternalRomance' | windows/remote/43970.rb</div>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h4>Find Privilege Escalation</h4>
+                    <div class="code-block">
+                        <code>searchsploit linux kernel 4.15 local</code>
+                    </div>
+                    <p>Search for Linux kernel 4.15 local privilege escalation</p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h4>Web Application Exploits</h4>
+                    <div class="code-block">
+                        <code>searchsploit wordpress 5.0 --exclude="dos"</code>
+                    </div>
+                    <p>WordPress 5.0 exploits excluding denial of service</p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <h4>Multiple Terms Search</h4>
+                    <div class="code-block">
+                        <code>searchsploit "apache 2.4" "remote code execution"</code>
+                    </div>
+                    <p>Search with quoted phrases for exact matches</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section" id="tips">
+            <h2 class="section-title">Tips & Best Practices</h2>
+            
+            <div class="tip">
+                <div class="tip-content">
+                    <strong>Update Regularly:</strong> Keep your exploit database updated
+                    <div class="code-block" style="margin-top: 0.5rem;">
+                        <code>searchsploit -u</code>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tip">
+                <div class="tip-content">
+                    <strong>Use Version Numbers:</strong> Include specific version numbers for better results
+                    <div class="code-block" style="margin-top: 0.5rem;">
+                        <code>searchsploit "apache 2.4.41" instead of searchsploit apache</code>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tip">
+                <div class="tip-content">
+                    <strong>Combine with Nmap:</strong> Use nmap results to guide your searches
+                    <div class="code-block" style="margin-top: 0.5rem;">
+                        <code>nmap -sV target_ip</code>
+                    </div>
+                    <div class="code-block">
+                        <code>searchsploit "service_name version_number"</code>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="warning">
+                <div class="warning-content">
+                    <strong>Legal Notice:</strong> Only use SearchSploit and exploits on systems you own or have explicit permission to test. Unauthorized access to computer systems is illegal.
+                </div>
+            </div>
+            
+            <h3>Common Search Patterns</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Pattern</th>
+                            <th>Use Case</th>
+                            <th>Example</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Service + Version</td>
+                            <td>Target specific software</td>
+                            <td><code>searchsploit "openssh 7.4"</code></td>
+                        </tr>
+                        <tr>
+                            <td>OS + Kernel</td>
+                            <td>System exploits</td>
+                            <td><code>searchsploit "linux kernel 4.15"</code></td>
+                        </tr>
+                        <tr>
+                            <td>CVE Numbers</td>
+                            <td>Known vulnerabilities</td>
+                            <td><code>searchsploit CVE-2019-0708</code></td>
+                        </tr>
+                        <tr>
+                            <td>Platform + Type</td>
+                            <td>Exploit categories</td>
+                            <td><code>searchsploit windows remote</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <h3>Integration with Other Tools</h3>
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h4>Metasploit Integration</h4>
+                    <div class="code-block">
+                        <code>searchsploit -m apache --nmap nmap_output.xml</code>
+                    </div>
+                    <p>Automatically search based on Nmap results</p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h4>Custom Database Path</h4>
+                    <div class="code-block">
+                        <code>searchsploit -p 39446 --path /custom/path/to/exploitdb</code>
+                    </div>
+                    <p>Use custom exploit database location</p>
+                </div>
+            </div>
+            
+            <div class="tip">
+                <div class="tip-content">
+                    <strong>Pro Tip:</strong> Create aliases for common searches in your .bashrc
+                    <div class="code-block" style="margin-top: 0.5rem;">
+                        <code>alias sswin="searchsploit windows remote"</code>
+                    </div>
+                    <div class="code-block">
+                        <code>alias sslinux="searchsploit linux local privilege"</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
